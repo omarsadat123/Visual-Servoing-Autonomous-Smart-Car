@@ -1,10 +1,18 @@
 # Visual Servoing Autonomous Smart Car
 
+![Visual Servoing Autonomous Smart Car — Raspberry Pi 5, OpenCV and ArUco Tracking](assets/banner.png)
+
 Raspberry Pi 5 + USB camera + OpenCV ArUco marker following with camera calibration, pose estimation and PWM differential steering on a 4WD chassis.
 
 ## Reconstruction status
 
-This is a newly reconstructed implementation based on Omar Sadat's project description. The original source code was lost. This code has not been tested on the physical car and is not evidence that the original demonstration used this exact implementation. No video or calibration files are included.
+This is a reconstructed implementation based on the team's [project report](docs/project-report.pdf) and Omar Sadat's hardware clarification. The original source code was lost. The report documents the original car; the replacement software has not yet been tested on that car. No video or original calibration files are included.
+
+**Course:** CSE331, Microprocessor Interfacing, Section 04, Group 03.  
+**Instructor:** Md Raqibur Rahman (RQN).  
+**Project team:** Md. Mofidul Hassan, Somik Miah, and Omar Sadat.
+
+See [report alignment and implementation notes](docs/REPORT_ALIGNMENT.md) for confirmed details and configurable assumptions.
 
 ## Assumed hardware
 
@@ -42,9 +50,25 @@ Take at least 12 (preferably 20+) sharp images of a chessboard across the full c
 python calibrate.py 'photos/*.jpg' --columns 9 --rows 6 --square-m 0.025
 python follow.py                 # Preview / dry run, no GPIO outputs
 python follow.py --drive         # Enables motors explicitly
+python follow.py --headless      # Dry run over SSH, without desktop windows
+python follow.py --headless --drive
 ```
 
-Use marker ID 0 from OpenCV's DICT_4X4_50 dictionary. Set its measured outer black-square width (excluding the white margin) in `marker_size_m`. Put the camera facing forward without mirroring. Start with the wheels raised, confirm each motor direction and left/right mapping, then test at low speed in a clear area with the cutoff within reach. Press q or Ctrl+C to stop.
+Use marker ID 1, visible in the report's tracking screenshot. This reconstruction uses OpenCV's DICT_4X4_50 dictionary. Set its measured outer black-square width (excluding the white margin) in `marker_size_m`. Put the camera facing forward without mirroring. Start with the wheels raised, confirm each motor direction and left/right mapping, then test at low speed in a clear area with the cutoff within reach. Press q or Ctrl+C to stop.
+
+Generate a printable marker using `python make_marker.py`. The marker dictionary and physical size were not specified in the report; these defaults must match the marker you actually print. Calibration paths are resolved relative to your configuration file.
+
+### Earlier image-centering version
+
+The report describes a simpler version before calibration. Run `python follow.py --mode basic` to preview it without calibration, or append `--headless` for SSH. Add `--drive` only after configuring your wiring. Basic mode steers from horizontal image offset and stops when the average marker edge exceeds `basic_stop_width_fraction` of image width. This is an apparent-size heuristic, not a distance measurement; marker angle and size affect it. The calibrated `pose` mode remains the default.
+
+### Troubleshooting
+
+- GPIO: the code explicitly selects `LGPIOFactory`, matching the report's `GPIOZERO_PIN_FACTORY=lgpio` solution. Check OS GPIO permissions and installed lgpio support.
+- SSH: use `--headless`; terminate with Ctrl+C. Keep the Pi powered from its dedicated supply as described in the report.
+- Calibration mismatch: use the same resolution, focus and webcam for calibration and operation.
+- Weak or unstable movement: check motor supply under load, driver limits and motor direction; the report describes resolving separate motor/Pi power problems.
+- Lost target: the controller stops all four channels and resumes after a valid target returns.
 
 ## How it works
 
@@ -57,10 +81,19 @@ The controller uses camera-frame lateral displacement and forward depth. It does
 - `calibrate.py`: offline camera calibration
 - `follow.py`: webcam, detection, pose and following loop
 - `control.py`: hardware-independent steering logic
+- `vision.py`: validated calibration loading and marker pose estimation
+- `make_marker.py`: printable marker generation
 - `motors.py`: GPIO and timeout stop
 - `config.json`: measured geometry, gains and example wiring
 - `test_control.py`: controller regression tests
+- `test_motors.py` / `test_vision.py`: routing, marker detection and synthetic pose checks
+- `docs/project-report.pdf`: supplied original report
 
 ## Demo
 
 Add the surviving demonstration video or a hosted link here when available. Label it as the original hardware demonstration; do not present it as a validation of this reconstructed code.
+
+## References
+
+- [OpenCV ArUco detection and pose tutorial](https://docs.opencv.org/4.x/d5/dae/tutorial_aruco_detection.html)
+- [gpiozero Motor API](https://gpiozero.readthedocs.io/en/stable/api_output.html#motor)
