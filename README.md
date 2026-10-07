@@ -90,8 +90,7 @@ The controller uses camera-frame lateral displacement and forward depth. It does
 - `docs/project-report.pdf`: supplied original report
 
 ## Demo
-
-Add the surviving demonstration video or a hosted link here when available. Label it as the original hardware demonstration; do not present it as a validation of this reconstructed code.
+Vedio Demo: https://lnkd.in/p/grCXfKVB
 
 ## References
 
